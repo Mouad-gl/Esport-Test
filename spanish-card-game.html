@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego de Cartas Españolas</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: radial-gradient(ellipse at center, #1e5c30 0%, #0d3318 100%);
+  font-family: 'Georgia', serif;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  gap: 8px;
+}
+
+h1 {
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+  color: #FFD700;
+}
+
+#game-area {
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- Opponents ---- */
+.opponents-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+}
+
+.player-info {
+  background: rgba(0,0,0,0.35);
+  border-radius: 10px;
+  padding: 8px 14px;
+  text-align: center;
+  border: 2px solid rgba(255,255,255,0.15);
+  transition: border-color 0.3s, background 0.3s;
+  flex: 1;
+}
+
+.player-info.active {
+  border-color: #FFD700;
+  background: rgba(255,215,0,0.1);
+}
+
+.player-info .p-name { font-size: 0.85rem; opacity: 0.8; }
+.player-info .p-count { font-size: 1.3rem; font-weight: bold; color: #FFD700; }
+
+.card-backs {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.card-back {
+  width: 16px;
+  height: 24px;
+  background: linear-gradient(135deg, #8B0000 0%, #5a0000 100%);
+  border-radius: 3px;
+  border: 1px solid #FFD700;
+}
+
+/* ---- Center Play Area ---- */
+#play-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  padding: 16px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 14px;
+  min-height: 130px;
+}
+
+/* ---- Cards ---- */
+.card {
+  width: 72px;
+  height: 104px;
+  border-radius: 8px;
+  border: 2px solid #bbb;
+  background: #fffef8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 3px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.card:hover:not(.disabled) {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.card.disabled {
+  opacity: 0.55;
+  cursor: default;
+  filter: grayscale(20%);
+}
+
+.card.playable {
+  border-color: #FFD700;
+  box-shadow: 0 0 10px rgba(255,215,0,0.7);
+}
+
+.card.top-discard {
+  cursor: default;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.corner {
+  font-weight: bold;
+  line-height: 1.1;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.corner .suit-sym { font-size: 1rem; }
+.center-sym { font-size: 1.6rem; line-height: 1; }
+.bottom-corner { transform: rotate(180deg); }
+
+/* Suit text colors */
+.suit-oros    { color: #9A6C00; }
+.suit-copas   { color: #8B0000; }
+.suit-espadas { color: #1a1a2e; }
+.suit-bastos  { color: #2d5a27; }
+
+/* ---- Deck ---- */
+#deck-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+#deck-card {
+  width: 72px;
+  height: 104px;
+  border-radius: 8px;
+  border: 2px solid #FFD700;
+  background: linear-gradient(135deg, #7a0000 0%, #3d0000 100%);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+}
+
+#deck-card:hover { transform: scale(1.06); box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
+#deck-card.inactive { cursor: default; opacity: 0.6; }
+#deck-card.inactive:hover { transform: none; }
+#deck-count { font-size: 0.78rem; opacity: 0.8; text-align: center; }
+
+/* ---- Status ---- */
+#status-area {
+  background: rgba(0,0,0,0.4);
+  border-radius: 10px;
+  padding: 10px 16px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+#status-msg {
+  font-size: 0.95rem;
+  color: #FFD700;
+  min-height: 22px;
+}
+
+#suit-display {
+  font-size: 1.1rem;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
+/* ---- Player Hand ---- */
+#player-area {
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  transition: border-color 0.3s;
+}
+
+#player-area.active { border-color: #FFD700; }
+
+#player-label {
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-bottom: 6px;
+}
+
+#player-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* ---- Rules Panel ---- */
+#rules-toggle {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #ccc;
+  padding: 4px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+#rules-toggle:hover { background: rgba(0,0,0,0.5); }
+
+#rules-panel {
+  display: none;
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+#rules-panel.open { display: block; }
+#rules-panel ul { padding-left: 16px; }
+
+/* ---- Suit Modal ---- */
+#suit-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+#suit-modal.show { display: flex; }
+
+#suit-picker {
+  background: linear-gradient(135deg, #1a472a, #0d3318);
+  border: 3px solid #FFD700;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+#suit-picker h2 { margin-bottom: 16px; color: #FFD700; }
+
+.suit-btn-row { display: flex; gap: 12px; justify-content: center; }
+
+.suit-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  border: 2px solid #bbb;
+  background: #fffef8;
+  font-size: 2.2rem;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.suit-btn span { font-size: 0.6rem; font-weight: bold; }
+.suit-btn:hover {
+  transform: scale(1.12);
+  border-color: #FFD700;
+  box-shadow: 0 0 12px rgba(255,215,0,0.7);
+}
+
+/* ---- Win Screen ---- */
+#win-screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#win-screen.show { display: flex; }
+
+#win-content {
+  background: linear-gradient(135deg, #1a472a, #0d3318);
+  border: 3px solid #FFD700;
+  border-radius: 20px;
+  padding: 40px 50px;
+}
+
+#win-title { font-size: 2.2rem; margin-bottom: 8px; color: #FFD700; }
+#win-msg { font-size: 1rem; opacity: 0.85; margin-bottom: 20px; }
+
+#restart-btn {
+  padding: 10px 28px;
+  background: #FFD700;
+  color: #1a472a;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, transform 0.15s;
+}
+
+#restart-btn:hover { background: #FFC200; transform: scale(1.05); }
+
+/* ---- Pending Draws Indicator ---- */
+#pending-badge {
+  display: none;
+  background: #cc0000;
+  color: white;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+#pending-badge.show { display: block; }
+</style>
+</head>
+<body>
+
+<h1>🃏 Cartas Españolas</h1>
+
+<div id="game-area">
+
+  <!-- Opponents -->
+  <div class="opponents-row" id="opponents-row"></div>
+
+  <!-- Play Area -->
+  <div id="play-area">
+    <div id="deck-pile">
+      <div id="deck-card" onclick="humanDraw()">🂠</div>
+      <div id="deck-count"></div>
+    </div>
+    <div id="pending-badge"></div>
+    <div id="discard-top"></div>
+  </div>
+
+  <!-- Status -->
+  <div id="status-area">
+    <div id="status-msg">Starting game...</div>
+    <div id="suit-display"></div>
+  </div>
+
+  <!-- Player Hand -->
+  <div id="player-area">
+    <div id="player-label">Your Hand</div>
+    <div id="player-hand"></div>
+  </div>
+
+  <!-- Rules -->
+  <div style="display:flex;justify-content:center">
+    <button id="rules-toggle" onclick="toggleRules()">▼ Show Rules</button>
+  </div>
+  <div id="rules-panel">
+    <strong>How to Play:</strong>
+    <ul>
+      <li>Match the <strong>suit</strong> or <strong>number</strong> of the top card.</li>
+      <li><strong>1 (Ace)</strong> — Skips the next player's turn.</li>
+      <li><strong>2</strong> — Next player must draw 2 cards (stackable!).</li>
+      <li><strong>7</strong> — You choose the new active suit.</li>
+      <li>If you can't play, click the <strong>deck</strong> to draw.</li>
+      <li>First player to empty their hand wins!</li>
+    </ul>
+    <br>
+    <strong>Suits:</strong> 🪙 Oros &nbsp; 🏆 Copas &nbsp; ⚔️ Espadas &nbsp; 🏑 Bastos
+  </div>
+
+</div>
+
+<!-- Suit Chooser Modal -->
+<div id="suit-modal">
+  <div id="suit-picker">
+    <h2>Choose the new suit</h2>
+    <div class="suit-btn-row">
+      <button class="suit-btn" onclick="chooseSuit('oros')">🪙<span>Oros</span></button>
+      <button class="suit-btn" onclick="chooseSuit('copas')">🏆<span>Copas</span></button>
+      <button class="suit-btn" onclick="chooseSuit('espadas')">⚔️<span>Espadas</span></button>
+      <button class="suit-btn" onclick="chooseSuit('bastos')">🏑<span>Bastos</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Win Screen -->
+<div id="win-screen">
+  <div id="win-content">
+    <div id="win-title"></div>
+    <div id="win-msg"></div>
+    <button id="restart-btn" onclick="initGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────
+const SUITS = ['oros', 'copas', 'espadas', 'bastos'];
+const SUIT_DATA = {
+  oros:    { name: 'Oros',    sym: '🪙', cls: 'suit-oros' },
+  copas:   { name: 'Copas',   sym: '🏆', cls: 'suit-copas' },
+  espadas: { name: 'Espadas', sym: '⚔️', cls: 'suit-espadas' },
+  bastos:  { name: 'Bastos',  sym: '🏑', cls: 'suit-bastos' },
+};
+// Numbers in Spanish deck: 1-7, 10-12 (no 8, no 9)
+const NUMBERS = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12];
+const NUM_PLAYERS = 4;
+const HAND_SIZE = 7;
+
+const SKIP_NUM     = 1;
+const DRAW_TWO_NUM = 2;
+const CHANGE_SUIT_NUM = 7;
+
+// ─────────────────────────────────────────
+//  GAME STATE
+// ─────────────────────────────────────────
+let G = {};
+
+function createDeck() {
+  const d = [];
+  for (const suit of SUITS)
+    for (const num of NUMBERS)
+      d.push({ suit, num });
+  return d;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function initGame() {
+  document.getElementById('win-screen').classList.remove('show');
+  document.getElementById('suit-modal').classList.remove('show');
+
+  const deck = shuffle(createDeck());
+  const players = Array.from({ length: NUM_PLAYERS }, (_, i) => ({
+    name: i === 0 ? 'You' : `Player ${i + 1}`,
+    isHuman: i === 0,
+    hand: deck.splice(0, HAND_SIZE),
+  }));
+
+  // First discard card must not be a special card
+  let first;
+  const rest = [];
+  for (const c of deck) {
+    if (!first && ![SKIP_NUM, DRAW_TWO_NUM, CHANGE_SUIT_NUM].includes(c.num)) {
+      first = c;
+    } else {
+      rest.push(c);
+    }
+  }
+
+  G = {
+    deck: rest,
+    players,
+    discard: [first],
+    currentSuit: first.suit,
+    currentPlayer: 0,
+    pendingDraws: 0,
+    skipNext: false,
+    waitingForSuit: false,
+    gameOver: false,
+  };
+
+  render();
+  setStatus("Your turn! Play a matching card or draw from the deck.");
+}
+
+// ─────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────
+function topCard()  { return G.discard[G.discard.length - 1]; }
+
+function canPlay(card) {
+  // When there's a pending +2 chain, only another 2 can be played
+  if (G.pendingDraws > 0) return card.num === DRAW_TWO_NUM;
+  return card.suit === G.currentSuit || card.num === topCard().num;
+}
+
+function dealOne(player) {
+  if (G.deck.length === 0) reshuffleDeck();
+  if (G.deck.length > 0) player.hand.push(G.deck.shift());
+}
+
+function reshuffleDeck() {
+  const top = G.discard.pop();
+  G.deck = shuffle(G.discard);
+  G.discard = [top];
+  setStatus('Deck reshuffled from discard pile.');
+}
+
+function bestSuitForHand(hand) {
+  const c = { oros: 0, copas: 0, espadas: 0, bastos: 0 };
+  hand.forEach(card => c[card.suit]++);
+  return Object.entries(c).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function toggleRules() {
+  const p = document.getElementById('rules-panel');
+  const b = document.getElementById('rules-toggle');
+  const open = p.classList.toggle('open');
+  b.textContent = open ? '▲ Hide Rules' : '▼ Show Rules';
+}
+
+// ─────────────────────────────────────────
+//  TURN LOGIC
+// ─────────────────────────────────────────
+function advanceTurn() {
+  G.currentPlayer = (G.currentPlayer + 1) % NUM_PLAYERS;
+  if (G.skipNext) {
+    G.skipNext = false;
+    const skipped = G.players[G.currentPlayer].name;
+    G.currentPlayer = (G.currentPlayer + 1) % NUM_PLAYERS;
+    setStatus(`${skipped} is skipped! It's ${G.players[G.currentPlayer].name}'s turn.`);
+  }
+}
+
+function afterPlay(playerIdx) {
+  const p = G.players[playerIdx];
+  if (p.hand.length === 0) { endGame(playerIdx); return; }
+  if (!G.waitingForSuit) {
+    advanceTurn();
+    scheduleAI();
+  }
+  render();
+}
+
+// ─────────────────────────────────────────
+//  CARD EFFECTS
+// ─────────────────────────────────────────
+function applyEffect(card, playerIdx) {
+  const pname = G.players[playerIdx].name;
+  if (card.num === DRAW_TWO_NUM) {
+    G.pendingDraws += 2;
+    setStatus(`${pname} played a 2! Next player draws ${G.pendingDraws}.`);
+  } else if (card.num === SKIP_NUM) {
+    G.skipNext = true;
+    setStatus(`${pname} played a 1! Next player is skipped.`);
+  } else if (card.num === CHANGE_SUIT_NUM) {
+    if (G.players[playerIdx].isHuman) {
+      G.waitingForSuit = true;
+      document.getElementById('suit-modal').classList.add('show');
+      setStatus("Choose the new suit!");
+    } else {
+      const s = bestSuitForHand(G.players[playerIdx].hand);
+      G.currentSuit = s;
+      setStatus(`${pname} played a 7 and changed suit to ${SUIT_DATA[s].name} ${SUIT_DATA[s].sym}`);
+    }
+  }
+}
+
+// ─────────────────────────────────────────
+//  HUMAN ACTIONS
+// ─────────────────────────────────────────
+function humanPlay(cardIdx) {
+  if (G.gameOver || G.waitingForSuit || G.currentPlayer !== 0) return;
+
+  const card = G.players[0].hand[cardIdx];
+  if (!canPlay(card)) {
+    setStatus("That card doesn't match the suit or number!");
+    return;
+  }
+
+  G.players[0].hand.splice(cardIdx, 1);
+  G.discard.push(card);
+  G.currentSuit = card.suit;
+  applyEffect(card, 0);
+  afterPlay(0);
+}
+
+function humanDraw() {
+  if (G.gameOver || G.waitingForSuit || G.currentPlayer !== 0) return;
+
+  const player = G.players[0];
+  const n = G.pendingDraws > 0 ? G.pendingDraws : 1;
+  for (let i = 0; i < n; i++) dealOne(player);
+
+  if (G.pendingDraws > 0) {
+    setStatus(`You drew ${G.pendingDraws} cards.`);
+    G.pendingDraws = 0;
+  } else {
+    setStatus('You drew a card.');
+  }
+
+  advanceTurn();
+  render();
+  scheduleAI();
+}
+
+function chooseSuit(suit) {
+  if (!G.waitingForSuit) return;
+  G.waitingForSuit = false;
+  G.currentSuit = suit;
+  document.getElementById('suit-modal').classList.remove('show');
+  setStatus(`You changed the suit to ${SUIT_DATA[suit].name} ${SUIT_DATA[suit].sym}`);
+  advanceTurn();
+  render();
+  scheduleAI();
+}
+
+// ─────────────────────────────────────────
+//  AI LOGIC
+// ─────────────────────────────────────────
+function scheduleAI() {
+  if (!G.gameOver && G.currentPlayer !== 0 && !G.waitingForSuit) {
+    setTimeout(aiTurn, 850);
+  }
+}
+
+function aiTurn() {
+  if (G.gameOver || G.currentPlayer === 0 || G.waitingForSuit) return;
+
+  const player = G.players[G.currentPlayer];
+  const playable = player.hand
+    .map((card, idx) => ({ card, idx }))
+    .filter(({ card }) => canPlay(card));
+
+  if (playable.length > 0) {
+    // Priority: DRAW_TWO > SKIP > CHANGE_SUIT > suit match > any
+    const priority = num => {
+      if (num === DRAW_TWO_NUM) return 4;
+      if (num === SKIP_NUM) return 3;
+      if (num === CHANGE_SUIT_NUM) return 2;
+      return 0;
+    };
+    playable.sort((a, b) => priority(b.card.num) - priority(a.card.num));
+    const { card, idx } = playable[0];
+
+    player.hand.splice(idx, 1);
+    G.discard.push(card);
+    G.currentSuit = card.suit;
+    applyEffect(card, G.currentPlayer);
+    afterPlay(G.currentPlayer);
+  } else {
+    // Must draw
+    const n = G.pendingDraws > 0 ? G.pendingDraws : 1;
+    for (let i = 0; i < n; i++) dealOne(player);
+    if (G.pendingDraws > 0) {
+      setStatus(`${player.name} had to draw ${G.pendingDraws} cards.`);
+      G.pendingDraws = 0;
+    } else {
+      setStatus(`${player.name} drew a card.`);
+    }
+    advanceTurn();
+    render();
+    scheduleAI();
+  }
+}
+
+// ─────────────────────────────────────────
+//  WIN
+// ─────────────────────────────────────────
+function endGame(winnerIdx) {
+  G.gameOver = true;
+  render();
+  const winner = G.players[winnerIdx];
+  document.getElementById('win-title').textContent =
+    winnerIdx === 0 ? '🎉 You Win!' : `${winner.name} Wins!`;
+  document.getElementById('win-msg').textContent =
+    winnerIdx === 0 ? 'Congratulations — you emptied your hand first!' : 'Better luck next time!';
+  document.getElementById('win-screen').classList.add('show');
+}
+
+// ─────────────────────────────────────────
+//  RENDERING
+// ─────────────────────────────────────────
+function render() {
+  renderOpponents();
+  renderCenter();
+  renderHand();
+}
+
+function renderOpponents() {
+  const row = document.getElementById('opponents-row');
+  row.innerHTML = '';
+  for (let i = 1; i < NUM_PLAYERS; i++) {
+    const p = G.players[i];
+    const active = G.currentPlayer === i;
+    const div = document.createElement('div');
+    div.className = `player-info${active ? ' active' : ''}`;
+    const backs = '<div class="card-back"></div>'.repeat(Math.min(p.hand.length, 10));
+    div.innerHTML = `
+      <div class="p-name">${p.name}${active ? ' ◀' : ''}</div>
+      <div class="p-count">${p.hand.length}</div>
+      <div class="card-backs">${backs}</div>
+    `;
+    row.appendChild(div);
+  }
+}
+
+function renderCenter() {
+  const top = topCard();
+  document.getElementById('discard-top').innerHTML = makeCardHTML(top, false, false, true);
+
+  document.getElementById('deck-count').textContent = `${G.deck.length} cards`;
+  const deckEl = document.getElementById('deck-card');
+  const myTurn = G.currentPlayer === 0 && !G.gameOver;
+  deckEl.className = myTurn ? '' : 'inactive';
+
+  const sd = SUIT_DATA[G.currentSuit];
+  document.getElementById('suit-display').textContent = `Active suit: ${sd.sym} ${sd.name}`;
+
+  const badge = document.getElementById('pending-badge');
+  if (G.pendingDraws > 0) {
+    badge.textContent = `+${G.pendingDraws} pending`;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+function renderHand() {
+  const hand = document.getElementById('player-hand');
+  hand.innerHTML = '';
+  const player = G.players[0];
+  const myTurn = G.currentPlayer === 0 && !G.gameOver && !G.waitingForSuit;
+
+  document.getElementById('player-area').className = myTurn ? 'active' : '';
+
+  player.hand.forEach((card, idx) => {
+    const playable = myTurn && canPlay(card);
+    const div = document.createElement('div');
+    div.innerHTML = makeCardHTML(card, !myTurn, playable, false);
+    const el = div.firstElementChild;
+    if (playable) el.addEventListener('click', () => humanPlay(idx));
+    hand.appendChild(el);
+  });
+}
+
+function makeCardHTML(card, disabled, playable, isTop) {
+  const sd = SUIT_DATA[card.suit];
+  const cls = ['card', sd.cls];
+  if (disabled && !isTop) cls.push('disabled');
+  if (playable) cls.push('playable');
+  if (isTop) cls.push('top-discard');
+
+  return `<div class="${cls.join(' ')}">
+    <div class="corner">
+      <div>${card.num}</div>
+      <div class="suit-sym">${sd.sym}</div>
+    </div>
+    <div class="center-sym">${sd.sym}</div>
+    <div class="corner bottom-corner">
+      <div>${card.num}</div>
+      <div class="suit-sym">${sd.sym}</div>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────
+//  START
+// ─────────────────────────────────────────
+initGame();
+</script>
+</body>
+</html>
