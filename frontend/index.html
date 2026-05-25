@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Esports Photoshoot Engine</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">Esports<strong>Shoot</strong></span>
+      </div>
+      <nav>
+        <button class="nav-btn active" data-tab="generate">Generate</button>
+        <button class="nav-btn" data-tab="teams">Teams</button>
+        <button class="nav-btn" data-tab="gallery">Gallery</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── GENERATE TAB ─────────────────────────────────────────── -->
+  <main id="tab-generate" class="tab-pane active">
+    <div class="page-hero">
+      <h1>Turn Any Player Photo Into a <span class="accent">Pro Esports Portrait</span></h1>
+      <p>Upload a normal photo. Get a cinematic media-day photoshoot — no studio required.</p>
+    </div>
+
+    <div class="generate-layout">
+      <!-- Upload zone -->
+      <div class="upload-card">
+        <div id="drop-zone" class="drop-zone">
+          <input type="file" id="photo-input" accept="image/*" hidden />
+          <div class="drop-content" id="drop-content">
+            <div class="drop-icon">📷</div>
+            <p>Drag & drop player photo here</p>
+            <p class="hint">or</p>
+            <button class="btn btn-secondary" onclick="document.getElementById('photo-input').click()">
+              Choose File
+            </button>
+            <p class="hint">JPEG / PNG / WebP · Max 10 MB</p>
+          </div>
+          <img id="preview-img" class="preview-img hidden" alt="Preview" />
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="form-card">
+        <h2>Player Details</h2>
+        <form id="generate-form">
+          <div class="form-row">
+            <label for="player-name">Player Name *</label>
+            <input id="player-name" type="text" placeholder="e.g. NiKo" required />
+          </div>
+          <div class="form-row">
+            <label for="game-tag">In-Game Tag</label>
+            <input id="game-tag" type="text" placeholder="e.g. NiKo#1337" />
+          </div>
+          <div class="form-row">
+            <label for="team-name">Team Name *</label>
+            <input id="team-name" type="text" placeholder="e.g. G2 Esports" required />
+          </div>
+          <div class="form-row two-col">
+            <div>
+              <label for="game">Game *</label>
+              <select id="game" required>
+                <option value="">Select game…</option>
+                <option value="CS2">CS2</option>
+                <option value="Valorant">Valorant</option>
+                <option value="League of Legends">League of Legends</option>
+                <option value="Dota 2">Dota 2</option>
+                <option value="Apex Legends">Apex Legends</option>
+                <option value="Fortnite">Fortnite</option>
+                <option value="Overwatch">Overwatch</option>
+                <option value="Rocket League">Rocket League</option>
+              </select>
+            </div>
+            <div>
+              <label for="region">Region *</label>
+              <select id="region" required>
+                <option value="">Select region…</option>
+                <option value="NA">NA</option>
+                <option value="EU">EU</option>
+                <option value="KR">KR</option>
+                <option value="CN">CN</option>
+                <option value="SEA">SEA</option>
+                <option value="BR">BR</option>
+                <option value="LA">LA</option>
+                <option value="JP">JP</option>
+                <option value="OCE">OCE</option>
+                <option value="MENA">MENA</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="role">Role (optional)</label>
+            <input id="role" type="text" placeholder="e.g. AWPer, IGL, Mid-Laner" />
+          </div>
+
+          <div id="team-status-banner" class="team-banner hidden"></div>
+
+          <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
+            <span id="submit-label">⚡ Generate Esports Portrait</span>
+            <span id="submit-spinner" class="spinner hidden"></span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Result panel -->
+    <div id="result-panel" class="result-panel hidden">
+      <h2>Your Esports Portrait</h2>
+      <div class="result-layout">
+        <div class="result-image-wrap">
+          <img id="result-img" alt="Generated portrait" />
+          <a id="download-btn" class="btn btn-secondary" download="esports-portrait.jpg">
+            ⬇ Download
+          </a>
+        </div>
+        <div class="result-meta" id="result-meta"></div>
+      </div>
+    </div>
+
+    <div id="error-panel" class="error-panel hidden"></div>
+  </main>
+
+  <!-- ── TEAMS TAB ─────────────────────────────────────────────── -->
+  <main id="tab-teams" class="tab-pane hidden">
+    <div class="page-hero">
+      <h1>Team <span class="accent">Identity Memory</span></h1>
+      <p>Every team's jersey design is saved and reused for all future players.</p>
+    </div>
+    <div id="teams-grid" class="teams-grid">
+      <div class="loading-placeholder">Loading teams…</div>
+    </div>
+  </main>
+
+  <!-- ── GALLERY TAB ───────────────────────────────────────────── -->
+  <main id="tab-gallery" class="tab-pane hidden">
+    <div class="page-hero">
+      <h1>Generated <span class="accent">Portraits</span></h1>
+      <p>All photoshoot results across teams and players.</p>
+    </div>
+    <div id="gallery-grid" class="gallery-grid">
+      <div class="loading-placeholder">Loading gallery…</div>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
