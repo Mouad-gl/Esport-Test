@@ -10,8 +10,6 @@ class Team(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False, index=True)
-    game: Mapped[str] = mapped_column(String(80), nullable=False)
-    region: Mapped[str] = mapped_column(String(60), nullable=False)
     logo_url: Mapped[str | None] = mapped_column(String(500))
     primary_color: Mapped[str | None] = mapped_column(String(20))   # hex
     secondary_color: Mapped[str | None] = mapped_column(String(20))

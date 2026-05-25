@@ -1,16 +1,16 @@
 """
-Core generation endpoint — orchestrates the full photoshoot pipeline.
+Core generation endpoint.
 
+Inputs:  team_name (text) + photo (reference photo) + team_logo (image)
 Flow:
-  1. Accept photo upload + player metadata
-  2. get_or_create_team  → team identity
-  3. ensure_jersey_prompt → load saved OR generate+save new
+  1. Save uploads
+  2. get_or_create_team
+  3. ensure_jersey_prompt (load saved OR generate+save using logo)
   4. pick_random_pose
   5. build_generation_prompt
-  6. Call Nano Banana 2
+  6. Call Nano Banana 2 (reference photo + logo + prompt)
   7. Quality check
   8. Persist GeneratedImage record
-  9. Return result
 """
 import json
 from datetime import datetime
@@ -33,41 +33,42 @@ router = APIRouter(prefix="/generate", tags=["generation"])
 
 @router.post("", response_model=GenerationOut)
 async def generate_photoshoot(
-    player_name: str = Form(...),
     team_name: str = Form(...),
-    game: str = Form(...),
-    region: str = Form(...),
-    role: str | None = Form(None),
-    game_tag: str | None = Form(None),
     photo: UploadFile = File(...),
+    team_logo: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    # --- 1. Save upload ---
+    # --- 1. Save uploads ---
     try:
         original_path = await save_upload(photo)
+        logo_path = await save_upload(team_logo)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
     # --- 2. Team identity ---
-    team, was_created = get_or_create_team(db, team_name, game, region)
-    team_status = "new" if was_created else "existing"
+    team, was_created = get_or_create_team(db, team_name)
 
-    # --- 3. Jersey prompt (load or generate) ---
-    jersey_prompt_record = ensure_jersey_prompt(db, team)
+    # Update logo path if this is the first upload or a new team
+    if was_created or not team.logo_url:
+        team.logo_url = logo_path
+        db.flush()
 
-    # --- 4. Player record ---
+    # --- 3. Jersey prompt (load or generate using the logo) ---
+    jersey_prompt_record = ensure_jersey_prompt(db, team, logo_url=logo_path)
+
+    # --- 4. Auto-name player record (no manual name required) ---
+    player_count = db.query(Player).filter(Player.team_id == team.id).count()
+    auto_name = f"{team.name} Player {player_count + 1}"
     player = Player(
         team_id=team.id,
-        name=player_name.strip(),
-        game_tag=game_tag,
-        role=role,
+        name=auto_name,
         original_photo_url=original_path,
     )
     db.add(player)
     db.flush()
 
     # --- 5. Random pose ---
-    pose = pick_random_pose(db, game)
+    pose = pick_random_pose(db, "General")
     pose_prompt = pose.prompt_text if pose else (
         "Confident front-facing esports portrait pose, arms relaxed, direct eye contact with camera."
     )
@@ -76,12 +77,11 @@ async def generate_photoshoot(
     full_prompt = build_generation_prompt(
         jersey_prompt=jersey_prompt_record.prompt_text,
         pose_prompt=pose_prompt,
-        game=game,
-        player_name=player_name,
         team_name=team_name,
+        has_logo_image=True,
     )
 
-    # --- 7. Create pending DB record ---
+    # --- 7. Create processing record ---
     record = GeneratedImage(
         player_id=player.id,
         team_id=team.id,
@@ -96,7 +96,11 @@ async def generate_photoshoot(
 
     # --- 8. Call Nano Banana 2 ---
     try:
-        result = nano_banana_client.generate(image_path=original_path, prompt=full_prompt)
+        result = nano_banana_client.generate(
+            image_path=original_path,
+            prompt=full_prompt,
+            logo_path=logo_path,
+        )
         generated_url = result["image_url"]
     except NanoBananaError as exc:
         record.status = "failed"
@@ -110,7 +114,7 @@ async def generate_photoshoot(
     record.quality_passed = qr.passed
     record.quality_issues = json.dumps(qr.issues) if qr.issues else None
 
-    # --- 10. Persist local copy and finalise ---
+    # --- 10. Persist and finalise ---
     local_generated = await save_generated_from_url(generated_url, record.id)
     record.generated_image_url = local_generated or generated_url
     record.status = "completed" if qr.passed else "quality_failed"
@@ -119,7 +123,7 @@ async def generate_photoshoot(
     db.refresh(record)
 
     out = GenerationOut.model_validate(record)
-    out.player_name = player.name
+    out.player_name = auto_name
     out.team_name = team.name
     out.pose_name = pose.name if pose else None
     return out

@@ -3,12 +3,7 @@ from pydantic import BaseModel
 
 
 class GenerationRequest(BaseModel):
-    player_name: str
     team_name: str
-    game: str
-    region: str
-    role: str | None = None
-    game_tag: str | None = None
 
 
 class GenerationOut(BaseModel):
