@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio 98</title>
+  <meta name="description" content="A Windows 98 style desktop portfolio." />
+  <link rel="stylesheet" href="vendor/98.css" />
+  <link rel="stylesheet" href="css/desktop.css" />
+</head>
+<body>
+
+  <!-- ============ BOOT / LOADING SCREEN ============ -->
+  <div id="boot" class="fullscreen">
+    <div class="boot-inner">
+      <div class="boot-logo">💾 Portfolio<span>98</span></div>
+      <div class="boot-bar"><div class="boot-bar-fill" id="bootFill"></div></div>
+      <div class="boot-status"><span id="bootMsg">Starting up…</span><span id="bootPct">0%</span></div>
+    </div>
+    <div class="boot-foot">© 199X — built with HTML, CSS &amp; nostalgia</div>
+  </div>
+
+  <!-- ============ CLICK TO ENTER ============ -->
+  <div id="enter" class="fullscreen hidden">
+    <div class="enter-inner">
+      <div class="boot-logo big">💾 Portfolio<span>98</span></div>
+      <button id="enterBtn">▶&nbsp; Click to start</button>
+      <div class="enter-hint">tip: best experienced on a desktop browser</div>
+    </div>
+  </div>
+
+  <!-- ============ DESKTOP ============ -->
+  <div id="desktop" class="hidden">
+    <div id="icons"></div>     <!-- desktop icons (rendered from APPS) -->
+    <div id="windows"></div>   <!-- open windows live here -->
+
+    <!-- ===== TASKBAR ===== -->
+    <div id="taskbar">
+      <button id="startBtn"><span class="start-flag">🪟</span><b>Start</b></button>
+      <div class="taskbar-sep"></div>
+      <div id="tasks"></div>
+      <div id="tray">
+        <span id="clock" title="">12:00 PM</span>
+      </div>
+    </div>
+
+    <!-- ===== START MENU ===== -->
+    <div id="startMenu" class="hidden">
+      <div class="start-side"><span>Portfolio<b>98</b></span></div>
+      <div class="start-main">
+        <div class="start-items" id="startItems"></div>
+        <div class="start-sep"></div>
+        <button class="start-item" id="startShutdown"><span class="si-icon">⏻</span> Shut Down…</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHUTDOWN ============ -->
+  <div id="shutdown" class="fullscreen hidden">
+    <div class="shutdown-inner">
+      <p>It is now safe to turn off your computer.</p>
+      <button id="shutdownBack">Turn back on</button>
+    </div>
+  </div>
+
+  <script src="js/apps.js"></script>
+  <script src="js/desktop.js"></script>
+  <script src="js/boot.js"></script>
+</body>
+</html>
