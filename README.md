@@ -11,8 +11,15 @@ Built with [three.js](https://threejs.org) (vendored locally, so it works offlin
 
 ## ▶️ Play
 
-The game is a static site under [`docs/`](docs/). Because it uses ES modules, it
-must be served over HTTP (opening `index.html` from `file://` will not work).
+**Easiest — single file:** download [`cubeworld.html`](cubeworld.html) and just
+**double-click it** to open in any modern browser. Everything (game code + the 3D
+engine) is inlined into that one file, so it runs straight from `file://` with no
+server and no internet. *(Rebuild it after changing the source with
+`node tools/build-singlefile.mjs` — see below.)*
+
+The game is also a static site under [`docs/`](docs/). Because that version uses ES
+modules split across files, it must be served over HTTP (opening `docs/index.html`
+from `file://` will not work).
 
 **Locally:**
 ```bash
