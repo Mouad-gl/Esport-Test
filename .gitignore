@@ -1,11 +1,9 @@
-__pycache__/
-*.pyc
-*.pyo
-.env
-*.db
-uploads/originals/
-uploads/generated/
-.venv/
-venv/
-dist/
-*.egg-info/
+# dependencies / tooling (none required to run the game)
+node_modules/
+.cache/
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log

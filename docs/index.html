@@ -2,142 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Esports Photoshoot Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cubeworld — a craft & survive sandbox</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="logo">
-        <span class="logo-icon">⚡</span>
-        <span class="logo-text">Esports<strong>Shoot</strong></span>
+  <!-- Loading / start screen -->
+  <div id="overlay" class="overlay">
+    <div class="panel">
+      <h1>⛏️ CUBEWORLD</h1>
+      <p class="tag">A tiny voxel sandbox — build, mine, craft, tame &amp; fight.</p>
+      <div id="loadbar"><div id="loadbar-fill"></div></div>
+      <p id="loadtext">Generating world…</p>
+      <button id="playBtn" disabled>Click to Play</button>
+      <div class="controls-help">
+        <h3>Controls</h3>
+        <ul>
+          <li><b>WASD</b> move &nbsp; <b>Space</b> jump &nbsp; <b>Shift</b> sprint</li>
+          <li><b>Mouse</b> look &nbsp; <b>Left click</b> mine / attack</li>
+          <li><b>Right click</b> place block / feed &amp; tame animals</li>
+          <li><b>1–9 / Scroll</b> select hotbar slot</li>
+          <li><b>E</b> crafting &nbsp; <b>F</b> eat held food &nbsp; <b>Esc</b> release mouse</li>
+        </ul>
       </div>
-      <nav>
-        <button class="nav-btn active" data-tab="generate">Generate</button>
-        <button class="nav-btn" data-tab="teams">Teams</button>
-        <button class="nav-btn" data-tab="gallery">Gallery</button>
-      </nav>
     </div>
-  </header>
-
-  <div class="demo-banner">
-    ⚡ This is a <strong>UI preview</strong> — connect a backend to enable full generation.
-    <a href="https://github.com/mouad-gl/Esport-Test" target="_blank">View source on GitHub</a>
   </div>
 
-  <!-- GENERATE TAB -->
-  <main id="tab-generate" class="tab-pane active">
-    <div class="page-hero">
-      <h1>Turn Any Player Photo Into a <span class="accent">Pro Esports Portrait</span></h1>
-      <p>Upload a normal photo. Get a cinematic media-day photoshoot — no studio required.</p>
+  <!-- In-game HUD -->
+  <div id="hud" class="hidden">
+    <div id="crosshair">+</div>
+
+    <div id="stats">
+      <div id="hearts" class="bar"></div>
+      <div id="hunger" class="bar"></div>
     </div>
 
-    <div class="generate-layout">
-      <div class="upload-card">
-        <div id="drop-zone" class="drop-zone">
-          <input type="file" id="photo-input" accept="image/*" hidden />
-          <div class="drop-content" id="drop-content">
-            <div class="drop-icon">📷</div>
-            <p>Drag &amp; drop player photo here</p>
-            <p class="hint">or</p>
-            <button class="btn btn-secondary" onclick="document.getElementById('photo-input').click()">
-              Choose File
-            </button>
-            <p class="hint">JPEG / PNG / WebP · Max 10 MB</p>
-          </div>
-          <img id="preview-img" class="preview-img hidden" alt="Preview" />
-        </div>
-      </div>
+    <div id="toast"></div>
 
-      <div class="form-card">
-        <h2>Player Details</h2>
-        <form id="generate-form">
-          <div class="form-row">
-            <label for="player-name">Player Name *</label>
-            <input id="player-name" type="text" placeholder="e.g. NiKo" required />
-          </div>
-          <div class="form-row">
-            <label for="game-tag">In-Game Tag</label>
-            <input id="game-tag" type="text" placeholder="e.g. NiKo#1337" />
-          </div>
-          <div class="form-row">
-            <label for="team-name">Team Name *</label>
-            <input id="team-name" type="text" placeholder="e.g. G2 Esports" required />
-          </div>
-          <div class="form-row two-col">
-            <div>
-              <label for="game">Game *</label>
-              <select id="game" required>
-                <option value="">Select game…</option>
-                <option value="CS2">CS2</option>
-                <option value="Valorant">Valorant</option>
-                <option value="League of Legends">League of Legends</option>
-                <option value="Dota 2">Dota 2</option>
-                <option value="Apex Legends">Apex Legends</option>
-                <option value="Fortnite">Fortnite</option>
-                <option value="Overwatch">Overwatch</option>
-                <option value="Rocket League">Rocket League</option>
-              </select>
-            </div>
-            <div>
-              <label for="region">Region *</label>
-              <select id="region" required>
-                <option value="">Select region…</option>
-                <option value="NA">NA</option>
-                <option value="EU">EU</option>
-                <option value="KR">KR</option>
-                <option value="CN">CN</option>
-                <option value="SEA">SEA</option>
-                <option value="BR">BR</option>
-                <option value="LA">LA</option>
-                <option value="JP">JP</option>
-                <option value="OCE">OCE</option>
-                <option value="MENA">MENA</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <label for="role">Role (optional)</label>
-            <input id="role" type="text" placeholder="e.g. AWPer, IGL, Mid-Laner" />
-          </div>
+    <div id="hotbar"></div>
 
-          <div id="team-status-banner" class="team-banner hidden"></div>
+    <div id="hint">Press <b>E</b> to craft</div>
+  </div>
 
-          <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
-            <span id="submit-label">⚡ Generate Esports Portrait</span>
-            <span id="submit-spinner" class="spinner hidden"></span>
-          </button>
-        </form>
-      </div>
+  <!-- Crafting screen -->
+  <div id="craftScreen" class="overlay hidden">
+    <div class="panel craft-panel">
+      <h2>🛠️ Crafting</h2>
+      <p class="tag">Recipes you can make are highlighted. Click to craft.</p>
+      <div id="recipeList"></div>
+      <h3>Inventory</h3>
+      <div id="invGrid"></div>
+      <button id="closeCraft">Close (E)</button>
     </div>
+  </div>
 
-    <div id="result-panel" class="result-panel hidden"></div>
-    <div id="error-panel" class="error-panel hidden"></div>
-  </main>
+  <div id="deathScreen" class="overlay hidden">
+    <div class="panel">
+      <h1 style="color:#ff5a5a">You Died</h1>
+      <p class="tag" id="deathMsg">The world is unforgiving.</p>
+      <button id="respawnBtn">Respawn</button>
+    </div>
+  </div>
 
-  <!-- TEAMS TAB -->
-  <main id="tab-teams" class="tab-pane hidden">
-    <div class="page-hero">
-      <h1>Team <span class="accent">Identity Memory</span></h1>
-      <p>Every team's jersey design is saved and reused for all future players.</p>
-    </div>
-    <div id="teams-grid" class="teams-grid">
-      <div class="loading-placeholder">Connect a backend to see teams.</div>
-    </div>
-  </main>
-
-  <!-- GALLERY TAB -->
-  <main id="tab-gallery" class="tab-pane hidden">
-    <div class="page-hero">
-      <h1>Generated <span class="accent">Portraits</span></h1>
-      <p>All photoshoot results across teams and players.</p>
-    </div>
-    <div id="gallery-grid" class="gallery-grid">
-      <div class="loading-placeholder">Connect a backend to see the gallery.</div>
-    </div>
-  </main>
-
-  <script src="app.js"></script>
+  <!-- Three.js via ES module CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
